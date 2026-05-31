@@ -1,3 +1,24 @@
 {
-  "cSpell.words": ["queueforge", "fastapi", "loguru", "uvicorn"]
+  "cSpell.words": [
+    "queueforge",
+    "fastapi",
+    "loguru",
+    "uvicorn",
+    "asgi",
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "httpx",
+    "pydantic",
+    "sqlalchemy",
+    "alembic",
+    "psycopg2-binary",
+    "redis",
+    "celery",
+    "flower",
+    "graphql-core",
+    "graphene",
+    "graphene-pydantic",
+    "GraphQLHTTPHandler"
+  ]
 }
