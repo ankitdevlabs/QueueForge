@@ -43,6 +43,30 @@ idna = ">=2.8"
 trio = ["trio (>=0.32.0)"]
 
 [[package]]
+name = "ariadne"
+version = "1.0.1"
+description = "Ariadne is a Python library for implementing GraphQL servers."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "ariadne-1.0.1-py3-none-any.whl", hash = "sha256:aedc21a0bb047e7564b2c1f1d72f21fb47e347acb5a166e6f7bf3cecdd12bbe7"},
+    {file = "ariadne-1.0.1.tar.gz", hash = "sha256:502fc2869cdd67822c69b846bece9f811e70868feb9a191186a4a802bf56b06d"},
+]
+
+[package.dependencies]
+graphql-core = ">=3.2.0"
+starlette = ">0.17,<2.0"
+typing-extensions = ">=4.6.0"
+
+[package.extras]
+asgi-file-uploads = ["python-multipart (>=0.0.13)"]
+dev = ["ipdb"]
+telemetry = ["opentelemetry-api"]
+test = ["aiodataloader", "freezegun", "graphql-sync-dataloaders", "httpx", "opentelemetry-api", "pytest", "pytest-asyncio", "pytest-benchmark", "pytest-cov", "pytest-mock", "python-multipart (>=0.0.13)", "syrupy", "werkzeug"]
+types = ["ty (>=0.0.15)"]
+
+[[package]]
 name = "click"
 version = "8.4.1"
 description = "Composable command line interface toolkit"
@@ -111,6 +135,18 @@ termcolor = "*"
 
 [package.extras]
 test = ["hypothesis (<6.136.0)", "levenshtein (<=0.27.1)", "pip", "pylint (<3.3.8)", "pytest (<=8.4.1)", "pytest-pylint (<=1.1.2)", "pytest-runner (<7.0.0)", "setuptools (<=80.9.0)", "termcolor (<3.2.0)"]
+
+[[package]]
+name = "graphql-core"
+version = "3.2.8"
+description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
+optional = false
+python-versions = "<4,>=3.7"
+groups = ["main"]
+files = [
+    {file = "graphql_core-3.2.8-py3-none-any.whl", hash = "sha256:cbee07bee1b3ed5e531723685369039f32ff815ef60166686e0162f540f1520c"},
+    {file = "graphql_core-3.2.8.tar.gz", hash = "sha256:015457da5d996c924ddf57a43f4e959b0b94fb695b85ed4c29446e508ed65cf3"},
+]
 
 [[package]]
 name = "h11"
@@ -314,6 +350,18 @@ files = [
 typing-extensions = ">=4.14.1"
 
 [[package]]
+name = "shortuuid"
+version = "1.0.13"
+description = "A generator library for concise, unambiguous and URL-safe UUIDs."
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "shortuuid-1.0.13-py3-none-any.whl", hash = "sha256:a482a497300b49b4953e15108a7913244e1bb0d41f9d332f5e9925dba33a3c5a"},
+    {file = "shortuuid-1.0.13.tar.gz", hash = "sha256:3bb9cf07f606260584b1df46399c0b87dd84773e7b25912b7e391e30797c5e72"},
+]
+
+[[package]]
 name = "starlette"
 version = "1.2.0"
 description = "The little ASGI library that shines."
@@ -411,4 +459,4 @@ dev = ["black (>=19.3b0) ; python_version >= \"3.6\"", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.14"
-content-hash = "e65417f1e2fb01adfbe7f45bd8fc864a0584af997c0fe81de39458797190bad7"
+content-hash = "7c0ee790366bc99be19e2e19901c721e68c3b68715a156f061911733409168ed"
