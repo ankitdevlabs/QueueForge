@@ -1,0 +1,21 @@
+    [tool.poetry]
+name = "queueforge"
+version = "0.1.0"
+description = ""
+authors = ["Ankit Shrestha <ankit.shrestha196@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "queueforge", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.14"
+fastapi = "^0.136.3"
+uvicorn = "^0.48.0"
+fire = "^0.7.1"
+loguru = "^0.7.3"
+
+[tool.poetry.scripts]
+cli = "cli.cli:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
