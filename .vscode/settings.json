@@ -19,6 +19,7 @@
     "graphql-core",
     "graphene",
     "graphene-pydantic",
-    "GraphQLHTTPHandler"
+    "GraphQLHTTPHandler",
+    "shortuuid"
   ]
 }

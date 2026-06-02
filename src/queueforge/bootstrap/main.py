@@ -1,9 +1,20 @@
+from importlib import import_module
+from pathlib import Path
+from types import ModuleType
+
 from ariadne import MutationType, QueryType, ScalarType, SubscriptionType
+from ariadne.asgi.handlers import GraphQLHTTPHandler
 from ariadne.contrib.federation import make_federated_schema
+from ariadne.contrib.tracing.opentelemetry import OpenTelemetryExtension
+from ariadne.load_schema import read_graphql_file
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from graphql import GraphQLSchema
 from loguru import logger
 
+from queueforge.constants.constants import API_BASE_VERSION
+from queueforge.graphql import GraphQLx
+from queueforge.graphql.helper import default_bad_request_handler
 from queueforge.graphql.scalar import short_id_scalar
 
 
@@ -12,15 +23,32 @@ class QueueForgeStartup:
         """Initialize the QueueForge application."""
         logger.info("Initializing QueueForge application...")
         app = FastAPI(title="QueueForge")
-        # Additional setup can be done here (e.g., include routers, middleware, etc.)
+
+        # Initialize routes
+        self._routes(app)
+
         return app
 
-    def _routes(self) -> None:
-        """Load application routes."""
-        pass
+    def init_graphql(self) -> GraphQLx:
+        return GraphQLx(
+            self.get_schema(),
+            error_formatter=default_bad_request_handler,
+            debug=True,
+            introspection=True,
+            http_handler=GraphQLHTTPHandler(
+                extensions=[OpenTelemetryExtension],
+            ),
+        )
 
-    def init_graphql(self):
-        pass
+    def _routes(self, app: FastAPI):
+        graphql = self.init_graphql()
+
+        app.add_api_route("/health", self.health_check, methods=["GET"])
+
+        app.mount(f"api/{API_BASE_VERSION}/graphql", graphql)
+
+    def _get_schema_location(self) -> ModuleType:
+        return import_module("queueforge.graphql")
 
     def get_schema(self) -> GraphQLSchema:
         bindable = []
@@ -45,9 +73,20 @@ class QueueForgeStartup:
             convert_names_case=True,
         )
 
+    def __get_schema_locations(self) -> list[Path]:
+        locations = []
+        schema_location = self._get_schema_location()
+        location_path = Path(schema_location.__file__).parent.joinpath("schemas")  # type: ignore
+
+        locations.append(location_path)
+        logger.debug(f"Available schema locations \n:: {str(locations)}")
+        return locations
+
+    async def health_check(self):
+        return JSONResponse({"status": "ok", "status_code": 200})
+
     def _load_query_bindable(self) -> QueryType:
         query = QueryType()
-
         return query
 
     def _load_object_type_bindable(self):
@@ -65,7 +104,15 @@ class QueueForgeStartup:
         return [short_id_scalar]
 
     def _load_schema(self) -> str:
-        return ""
+        schema_locations = self.__get_schema_locations()
+        schema_list = []
+
+        for folder in schema_locations:
+            if folder.exists() and folder.is_dir():
+                for file in folder.glob("*.graphql"):
+                    schema_list.append(read_graphql_file(file))
+
+        return "\n".join(schema_list)
 
 
 def start_app(main: QueueForgeStartup) -> FastAPI:
