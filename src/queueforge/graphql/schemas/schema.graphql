@@ -1,0 +1,7 @@
+scalar ShortId
+
+type User {
+  id: ShortId!
+  name: String!
+  email: String!
+}
