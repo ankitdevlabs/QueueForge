@@ -45,7 +45,7 @@ class QueueForgeStartup:
 
         app.add_api_route("/health", self.health_check, methods=["GET"])
 
-        app.mount(f"api/{API_BASE_VERSION}/graphql", graphql)
+        app.mount(f"/api/{API_BASE_VERSION}/graphql", graphql)
 
     def _get_schema_location(self) -> ModuleType:
         return import_module("queueforge.graphql")
@@ -78,41 +78,57 @@ class QueueForgeStartup:
         schema_location = self._get_schema_location()
         location_path = Path(schema_location.__file__).parent.joinpath("schemas")  # type: ignore
 
-        locations.append(location_path)
+        for file in GRAPHQL_INTEGRATION_FILES:
+            locations.append(location_path.joinpath(file))
+
         logger.debug(f"Available schema locations \n:: {str(locations)}")
         return locations
+
+    def _load_schema(self) -> str:
+        schema_locations = self.__get_schema_locations()
+        schema_list = []
+
+        for path in schema_locations:
+            if path.exists():
+                schema_list.append(read_graphql_file(path))
+
+        return "\n".join(schema_list)
 
     async def health_check(self):
         return JSONResponse({"status": "ok", "status_code": 200})
 
     def _load_query_bindable(self) -> QueryType:
         query = QueryType()
+
+        query.set_field(
+            "users",
+            lambda *_: [
+                {"id": "1", "name": "John Doe", "email": "john.doe@example.com"}
+            ],
+        )
         return query
 
     def _load_object_type_bindable(self):
         return
 
     def _load_subscription_bindable(self) -> SubscriptionType:
-        subscription = SubscriptionType()
-        return subscription
+        subscription = SubscriptionType()  # noqa: F841
+        return  # type: ignore
 
     def _load_mutation_bindable(self) -> MutationType:
-        mutation = MutationType()
-        return mutation
+        mutation = MutationType()  # noqa: F841
+        return  # type: ignore
 
     def _load_scalar_type_bindable(self) -> list[ScalarType]:
         return [short_id_scalar]
 
-    def _load_schema(self) -> str:
-        schema_locations = self.__get_schema_locations()
-        schema_list = []
 
-        for folder in schema_locations:
-            if folder.exists() and folder.is_dir():
-                for file in folder.glob("*.graphql"):
-                    schema_list.append(read_graphql_file(file))
-
-        return "\n".join(schema_list)
+GRAPHQL_INTEGRATION_FILES = [
+    "schema.graphql",
+    # "mutations.graphql",
+    "queries.graphql",
+    # "subscription.graphql",
+]
 
 
 def start_app(main: QueueForgeStartup) -> FastAPI:
