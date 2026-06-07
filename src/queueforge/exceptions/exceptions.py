@@ -9,4 +9,5 @@ class CoreException(Exception):
 class InvalidSettingException(CoreException):
     """Invalid setting class"""
 
-    message = "Invalid setting class. Should be instance of CoreSettings."
+    def __init__(self) -> None:
+        super().__init__("Invalid setting class. Should be instance of CoreSettings.")

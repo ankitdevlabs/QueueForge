@@ -53,9 +53,8 @@ class QueueForgeStartup:
         settings_class = self._get_setting_class()
 
         if not isinstance(settings_class, type(AppSettings)):
-            raise InvalidSettingException(
-                "Invalid setting class. Should be instance of AppSettings."
-            )
+            raise InvalidSettingException()
+
         return self.__setting_factory(
             settings_class,
             env_prefix=self.__get_env_prefix(),
@@ -88,7 +87,7 @@ class QueueForgeStartup:
 
         try:
             settings = setting_class(
-                _env_file=f"{app_env}.env",
+                _env_file=f"{app_env}.env",  # type: ignore
                 base_path=app_path,
                 app_env=app_env,
                 **self.__load_config(app_env, config_dir),
