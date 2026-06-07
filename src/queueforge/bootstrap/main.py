@@ -1,6 +1,9 @@
+import os
+import sys
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 from ariadne import MutationType, QueryType, ScalarType, SubscriptionType
 from ariadne.asgi.handlers import GraphQLHTTPHandler
@@ -11,14 +14,25 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from graphql import GraphQLSchema
 from loguru import logger
+from pydantic import ValidationError
+from yaml import safe_load
 
-from queueforge.constants.constants import API_BASE_VERSION
+from queueforge.configs.settings import AppSettings
+from queueforge.constants.constants import API_BASE_VERSION, BASE_PATH, ENV_PREFIX
+from queueforge.exceptions.exceptions import InvalidSettingException
 from queueforge.graphql import GraphQLx
 from queueforge.graphql.helper import default_bad_request_handler
 from queueforge.graphql.scalar import short_id_scalar
 
 
 class QueueForgeStartup:
+    def __init__(self, testing: bool = False):
+        self._property_file_name = "production"
+        if testing is True:
+            self._property_file_name = "testing"
+
+        self.settings: AppSettings = self.__get_application_settings()
+
     def initialize(self) -> FastAPI:
         """Initialize the QueueForge application."""
         logger.info("Initializing QueueForge application...")
@@ -28,6 +42,65 @@ class QueueForgeStartup:
         self._routes(app)
 
         return app
+
+    def __get_env_prefix(self) -> str:
+        return ENV_PREFIX
+
+    def _get_app_path(self) -> Path:
+        return Path(__file__).parent.parent
+
+    def __get_application_settings(self) -> AppSettings:
+        settings_class = self._get_setting_class()
+
+        if not isinstance(settings_class, type(AppSettings)):
+            raise InvalidSettingException(
+                "Invalid setting class. Should be instance of AppSettings."
+            )
+        return self.__setting_factory(
+            settings_class,
+            env_prefix=self.__get_env_prefix(),
+            app_path=self._get_app_path(),
+        )
+
+    def __load_config(self, app_env: str, config_dir: Path) -> dict[Any, Any]:
+        config_file = config_dir.joinpath(f"{app_env}.yaml")
+
+        if not config_file.exists():
+            raise ValueError(f"Config file {config_file} not found.")
+
+        logger.info(f"Loading configuration ... {config_file}")
+        return safe_load(open(config_file).read())
+
+    def __setting_factory(
+        self,
+        setting_class: type[AppSettings],
+        env_prefix: str = ENV_PREFIX,
+        app_path: Path = BASE_PATH,
+    ):
+        app_env = os.getenv(env_prefix + "APP_ENV", self._property_file_name)
+        config_dir = os.getenv("CONFIG_DIR")
+
+        if config_dir is not None:
+            logger.info(f"ENV config_dir set: {config_dir}")
+            config_dir = Path(f"{config_dir}/{app_path.name}")
+        else:
+            config_dir = app_path
+
+        try:
+            settings = setting_class(
+                _env_file=f"{app_env}.env",
+                base_path=app_path,
+                app_env=app_env,
+                **self.__load_config(app_env, config_dir),
+            )
+        except ValidationError as e:
+            logger.error(f"Invalid Config/Settings. Error::  {str(e)}")
+            sys.exit(-1)
+        else:
+            return settings
+
+    def _get_setting_class(self) -> type[AppSettings]:
+        return AppSettings
 
     def init_graphql(self) -> GraphQLx:
         return GraphQLx(
