@@ -8,7 +8,7 @@ class CoreSettings(BaseSettings):
     """Core settings for the QueueForge application."""
 
     app_id: str | None = None
-    app_name: str 
+    app_name: str
     base_path: Path
     testing: bool = False
 
@@ -51,7 +51,7 @@ class PostgresSettings(BaseSettings):
     pg_pool_recycle: int | None = 3600
 
 
-class AppSettings(CoreSettings):
+class AppSettings(CoreSettings, PostgresSettings):
     """Application settings for the QueueForge application."""
 
     pass
