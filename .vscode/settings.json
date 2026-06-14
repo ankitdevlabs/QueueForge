@@ -21,6 +21,7 @@
     "graphene-pydantic",
     "GraphQLHTTPHandler",
     "shortuuid",
-    "casbin"
+    "casbin",
+    "sessionmaker"
   ]
 }
