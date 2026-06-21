@@ -17,6 +17,7 @@ from loguru import logger
 from pydantic import ValidationError
 from yaml import safe_load
 
+from queueforge.configs.containers import QueueForgeContainer
 from queueforge.configs.settings import AppSettings
 from queueforge.constants.constants import API_BASE_VERSION, BASE_PATH, ENV_PREFIX
 from queueforge.exceptions.exceptions import InvalidSettingException
@@ -33,6 +34,8 @@ class QueueForgeStartup:
 
         self.settings: AppSettings = self.__get_application_settings()
 
+        self.container = self.load_container()
+
     def initialize(self) -> FastAPI:
         """Initialize the QueueForge application."""
         logger.info("Initializing QueueForge application...")
@@ -42,6 +45,16 @@ class QueueForgeStartup:
         self._routes(app)
 
         return app
+
+    def __get_container(self) -> QueueForgeContainer:
+        container = QueueForgeContainer()
+        return container
+
+    def load_container(self) -> QueueForgeContainer:
+        container = self.__get_container()
+        container.settings.override(self.settings)  # type: ignore
+
+        return container
 
     def __get_env_prefix(self) -> str:
         return ENV_PREFIX
@@ -167,7 +180,17 @@ class QueueForgeStartup:
         return "\n".join(schema_list)
 
     async def health_check(self):
-        return JSONResponse({"status": "ok", "status_code": 200})
+        if self._check_database_connection():
+            return JSONResponse({"status": "ok", "status_code": 200})
+        return JSONResponse({"status": "error", "status_code": 503})
+
+    def _check_database_connection(self) -> bool:
+        try:
+            db_conn = self.container.db()
+            return db_conn.test_connection()
+        except Exception as e:
+            logger.error(f"SQL database connection check failed: {str(e)}")
+            return False
 
     def _load_query_bindable(self) -> QueryType:
         query = QueryType()
