@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: queueforge-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: queueforge
+      POSTGRES_PASSWORD: queueforge123
+      POSTGRES_DB: queueforge_db
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queueforge -d queueforge_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - queueforge-net
+
+volumes:
+  postgres_data:
+
+networks:
+  queueforge-net:
+    driver: bridge
