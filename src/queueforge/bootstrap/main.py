@@ -52,7 +52,7 @@ class QueueForgeStartup:
 
     def load_container(self) -> QueueForgeContainer:
         container = self.__get_container()
-        container.settings.override(self.settings)  # type: ignore
+        container.settings.override(self.settings)
 
         return container
 
