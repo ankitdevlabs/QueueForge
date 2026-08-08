@@ -39,12 +39,25 @@ class QueueForgeStartup:
     def initialize(self) -> FastAPI:
         """Initialize the QueueForge application."""
         logger.info("Initializing QueueForge application...")
-        app = FastAPI(title="QueueForge")
+        app = FastAPI(title="QueueForge", on_startup=[self._startup_health_check])
 
         # Initialize routes
         self._routes(app)
 
         return app
+
+    async def _startup_health_check(self):
+        """Check database connectivity at startup."""
+        try:
+            db_healthy = self.container.db().test_connection()
+            if not db_healthy:
+                logger.error("Database connection failed at startup")
+                raise RuntimeError("Database connection unavailable")
+            logger.info("Database connection verified at startup")
+
+        except Exception as e:
+            logger.error(f"Startup health check failed: {e!s}")
+            raise
 
     def __get_container(self) -> QueueForgeContainer:
         container = QueueForgeContainer()
@@ -106,7 +119,7 @@ class QueueForgeStartup:
                 **self.__load_config(app_env, config_dir),
             )
         except ValidationError as e:
-            logger.error(f"Invalid Config/Settings. Error::  {str(e)}")
+            logger.error(f"Invalid Config/Settings. Error::  {e!s}")
             sys.exit(-1)
         else:
             return settings
@@ -166,7 +179,7 @@ class QueueForgeStartup:
         for file in GRAPHQL_INTEGRATION_FILES:
             locations.append(location_path.joinpath(file))
 
-        logger.debug(f"Available schema locations \n:: {str(locations)}")
+        logger.debug(f"Available schema locations \n:: {locations!s}")
         return locations
 
     def _load_schema(self) -> str:
@@ -189,7 +202,7 @@ class QueueForgeStartup:
             db_conn = self.container.db()
             return db_conn.test_connection()
         except Exception as e:
-            logger.error(f"SQL database connection check failed: {str(e)}")
+            logger.error(f"SQL database connection check failed: {e!s}")
             return False
 
     def _load_query_bindable(self) -> QueryType:
