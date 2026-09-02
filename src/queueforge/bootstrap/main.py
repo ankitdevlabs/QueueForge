@@ -3,7 +3,7 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, TypeVar
 
 import injector
 from ariadne import MutationType, QueryType, ScalarType, SubscriptionType
@@ -28,6 +28,9 @@ from queueforge.exceptions.exceptions import InvalidSettingException
 from queueforge.graphql import GraphQLx
 from queueforge.graphql.helper import default_bad_request_handler
 from queueforge.graphql.scalar import short_id_scalar
+from queueforge.resolvers.user_resolver import UserResolver
+
+T = TypeVar("T")
 
 
 class QueueForgeStartup:
@@ -229,10 +232,16 @@ class QueueForgeStartup:
         subscription = SubscriptionType()  # noqa: F841
         return  # type: ignore
 
+    def _get_resolver(self, resolver_type: type[T]) -> T:
+        """Retrieve the specified resolver instance from the application context."""
+        return self.app_context.get(resolver_type)
+
     def _load_mutation_bindable(self) -> MutationType:
         mutation = MutationType()
-        # mutation.set_field("registerUser", resolve_register_user)
-        return  # type: ignore
+        mutation.set_field(
+            "registerUser", self._get_resolver(UserResolver).resolve_register_user
+        )
+        return mutation
 
     def _load_scalar_type_bindable(self) -> list[ScalarType]:
         return [short_id_scalar]
@@ -240,7 +249,7 @@ class QueueForgeStartup:
 
 GRAPHQL_INTEGRATION_FILES = [
     "schema.graphql",
-    # "mutations.graphql",
+    "mutations.graphql",
     "queries.graphql",
     # "subscription.graphql",
 ]

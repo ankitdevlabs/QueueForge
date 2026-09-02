@@ -7,11 +7,11 @@ type ErrorData {
   timeout: Int
 }
 
-# input ResgisterUserRequest {
-#   name: String!
-#   email: String!
-#   password: String!
-# }
+input RegisterUserRequest {
+  name: String!
+  email: String!
+  password: String!
+}
 
 type User {
   id: ShortId!
@@ -19,8 +19,8 @@ type User {
   email: String!
 }
 
-# input RegisterUserResponse {
-#   status: Int!
-#   error: ErrorData
-#   data: User
-# }
+type RegisterUserResponse {
+  status: Int!
+  error: ErrorData
+  data: User
+}
