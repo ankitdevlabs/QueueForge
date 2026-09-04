@@ -11,3 +11,9 @@ class UserRepository:
     @inject
     def __init__(self, db: SqlConnection):
         self._db = db
+
+    async def get_user_by_email(self, email: str):
+        """Retrieve a user by email."""
+
+    async def create_user(self, data):
+        """Create a new user."""

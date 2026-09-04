@@ -64,4 +64,4 @@ class ResponseHandler(GenericService):
             )
             return ResponseModel(status=status_code, error=error_response).model_dump()
 
-        return ResponseModel(data=data, status=status_code).model_dump()
+        return ResponseModel(data=data, status=status_code).model_dump(mode="json")
