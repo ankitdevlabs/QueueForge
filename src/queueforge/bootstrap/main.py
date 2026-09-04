@@ -21,6 +21,7 @@ from yaml import safe_load
 from queueforge.bootstrap.modules.repository.connection.postgresModule import (
     PostgresModule,
 )
+from queueforge.bootstrap.modules.service.module import ServiceModule
 from queueforge.configs.settings import AppSettings
 from queueforge.constants.constants import API_BASE_VERSION, BASE_PATH, ENV_PREFIX
 from queueforge.db_connection.sql_connection import SqlConnection
@@ -64,6 +65,7 @@ class QueueForgeStartup:
 
     def _configure_container(self, binder: injector.Binder) -> None:
         binder.install(PostgresModule(self.settings))
+        binder.install(ServiceModule(self.app_context, self.settings))
 
     async def _startup_health_check(self):
         """Check database connectivity at startup."""
@@ -210,7 +212,7 @@ class QueueForgeStartup:
         try:
             db_conn = self.app_context.get(SqlConnection)
             return db_conn.test_connection()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"SQL database connection check failed: {e!s}")
             return False
 
