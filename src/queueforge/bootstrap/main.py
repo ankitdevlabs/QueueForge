@@ -3,8 +3,9 @@ import sys
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, TypeVar
 
+import injector
 from ariadne import MutationType, QueryType, ScalarType, SubscriptionType
 from ariadne.asgi.handlers import GraphQLHTTPHandler
 from ariadne.contrib.federation import make_federated_schema
@@ -17,24 +18,31 @@ from loguru import logger
 from pydantic import ValidationError
 from yaml import safe_load
 
-from queueforge.configs.containers import QueueForgeContainer
+from queueforge.bootstrap.modules.repository.connection.postgresModule import (
+    PostgresModule,
+)
+from queueforge.bootstrap.modules.service.module import ServiceModule
 from queueforge.configs.settings import AppSettings
 from queueforge.constants.constants import API_BASE_VERSION, BASE_PATH, ENV_PREFIX
+from queueforge.db_connection.sql_connection import SqlConnection
 from queueforge.exceptions.exceptions import InvalidSettingException
 from queueforge.graphql import GraphQLx
 from queueforge.graphql.helper import default_bad_request_handler
 from queueforge.graphql.scalar import short_id_scalar
+from queueforge.resolvers.user_resolver import UserResolver
+
+T = TypeVar("T")
 
 
 class QueueForgeStartup:
     def __init__(self, testing: bool = False):
+        self._injector = injector.Injector()
         self._property_file_name = "production"
         if testing is True:
             self._property_file_name = "testing"
 
         self.settings: AppSettings = self.__get_application_settings()
-
-        self.container = self.load_container()
+        self._load_app_context()
 
     def initialize(self) -> FastAPI:
         """Initialize the QueueForge application."""
@@ -46,10 +54,23 @@ class QueueForgeStartup:
 
         return app
 
+    @property
+    def app_context(self) -> injector.Injector:
+        """Provide the application context."""
+        return self._injector
+
+    def _load_app_context(self):
+        # path = self._get_app_path().stem
+        self._configure_container(self.app_context.binder)
+
+    def _configure_container(self, binder: injector.Binder) -> None:
+        binder.install(PostgresModule(self.settings))
+        binder.install(ServiceModule(self.app_context, self.settings))
+
     async def _startup_health_check(self):
         """Check database connectivity at startup."""
         try:
-            db_healthy = self.container.db().test_connection()
+            db_healthy = self._check_database_connection()
             if not db_healthy:
                 logger.error("Database connection failed at startup")
                 raise RuntimeError("Database connection unavailable")
@@ -58,16 +79,6 @@ class QueueForgeStartup:
         except Exception as e:
             logger.error(f"Startup health check failed: {e!s}")
             raise
-
-    def __get_container(self) -> QueueForgeContainer:
-        container = QueueForgeContainer()
-        return container
-
-    def load_container(self) -> QueueForgeContainer:
-        container = self.__get_container()
-        container.settings.override(self.settings)
-
-        return container
 
     def __get_env_prefix(self) -> str:
         return ENV_PREFIX
@@ -199,9 +210,9 @@ class QueueForgeStartup:
 
     def _check_database_connection(self) -> bool:
         try:
-            db_conn = self.container.db()
+            db_conn = self.app_context.get(SqlConnection)
             return db_conn.test_connection()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"SQL database connection check failed: {e!s}")
             return False
 
@@ -223,9 +234,16 @@ class QueueForgeStartup:
         subscription = SubscriptionType()  # noqa: F841
         return  # type: ignore
 
+    def _get_resolver(self, resolver_type: type[T]) -> T:
+        """Retrieve the specified resolver instance from the application context."""
+        return self.app_context.get(resolver_type)
+
     def _load_mutation_bindable(self) -> MutationType:
-        mutation = MutationType()  # noqa: F841
-        return  # type: ignore
+        mutation = MutationType()
+        mutation.set_field(
+            "registerUser", self._get_resolver(UserResolver).resolve_register_user
+        )
+        return mutation
 
     def _load_scalar_type_bindable(self) -> list[ScalarType]:
         return [short_id_scalar]
@@ -233,7 +251,7 @@ class QueueForgeStartup:
 
 GRAPHQL_INTEGRATION_FILES = [
     "schema.graphql",
-    # "mutations.graphql",
+    "mutations.graphql",
     "queries.graphql",
     # "subscription.graphql",
 ]

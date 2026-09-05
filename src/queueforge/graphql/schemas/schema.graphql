@@ -1,7 +1,29 @@
 scalar ShortId
+scalar DateTime
+
+type ErrorData {
+  code: Int!
+  message: String!
+  errorKey: String
+  timeout: Int
+}
+
+input RegisterUserRequest {
+  name: String!
+  email: String!
+  password: String!
+}
 
 type User {
   id: ShortId!
   name: String!
   email: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RegisterUserResponse {
+  status: Int!
+  error: ErrorData
+  data: User
 }

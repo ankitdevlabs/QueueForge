@@ -21,7 +21,7 @@ class QueueForgeCliCommand:
 
     def get_alembic_config(self):
         app_path = Path(__file__).resolve().parent.parent
-        config = Config(f"{app_path}/alembic.ini")
+        config = Config(f"{app_path.parent.parent}/alembic.ini")
         config.set_main_option("sqlalchemy.url", self.startup.settings.pg_dsn)  # type: ignore
         config.set_main_option("database_schema", "public")
         config.set_main_option("script_location", f"{app_path}/alembic")
@@ -82,10 +82,6 @@ class AlembicCommand:
             # head=_head,
             depends_on=depends,
         )
-
-    def upgrade(self, revision: str = "head", sql: bool = False) -> None:
-        """Upgrade to a revision."""
-        command.upgrade(self.alembic_cfg, revision=revision, sql=sql, tag=None)
 
     def downgrade(self, revision: str) -> None:
         """Downgrade revision."""

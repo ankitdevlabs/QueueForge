@@ -36,6 +36,6 @@ class SqlConnection(DatabaseConnection):
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
                 return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Database connection failed: {e}")
             return False
