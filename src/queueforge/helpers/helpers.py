@@ -4,7 +4,7 @@ from fastapi import status
 from pydantic import BaseModel, ValidationError
 
 from queueforge.exceptions.exceptions import InvalidRequestError
-from queueforge.helpers.error_handler import ResponseHandler
+from queueforge.helpers.response_handler import ResponseHandler
 
 T = TypeVar("T", bound=BaseModel)
 

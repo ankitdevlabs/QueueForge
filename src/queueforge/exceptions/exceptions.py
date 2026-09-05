@@ -21,3 +21,11 @@ class InvalidRequestError(CoreException):
 class AlreadyExistsError(CoreException):
     def __init__(self, message: str = "Resource already exists"):
         super().__init__(message)
+
+
+class EntityNotFoundException(Exception):
+    def __init__(self, repository, **kwargs):
+        message = f"Entity with {kwargs} not found"
+        super().__init__(message)
+        self.repository = repository
+        self.kwargs = kwargs
